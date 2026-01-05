@@ -1,24 +1,65 @@
 from mcp.server.fastmcp import FastMCP
-from mcp import Tool
+import os
+from pathlib import Path
 
 # Initialize FastMCP server
-mcp = FastMCP()
+mcp = FastMCP("local-repo-editor")
 
 @mcp.tool()
-async def test_tool() -> str:
-    '''
-    This is a test tool that enables the user to see that they have correctly implemented a their MCP server. 
-    It takes no arguments, when invoked this function will return a string that you should output to confirm
-    to them that you have correctly received the request. 
-    '''
-    return "Hi there! MCP Server working >:)"
-
-@mcp.tool()
-async def add(a: int, b: int) -> int:
-    return a + b
+def list_directory(path: str) -> str:
+    """Lists files and directories in the given path."""
+    try:
+        p = Path(path)
+        if not p.exists():
+            return f"Error: Path '{path}' does not exist."
+        if not p.is_dir():
+            return f"Error: Path '{path}' is not a directory."
         
+        items = []
+        for item in p.iterdir():
+            type_str = "DIR " if item.is_dir() else "FILE"
+            items.append(f"{type_str:<5} {item.name}")
+        
+        return "\n".join(sorted(items))
+    except Exception as e:
+        return f"Error listing directory: {str(e)}"
+
+@mcp.tool()
+def read_file(path: str) -> str:
+    """Reads the content of a file."""
+    try:
+        p = Path(path)
+        if not p.exists():
+            return f"Error: File '{path}' does not exist."
+        if not p.is_file():
+            return f"Error: Path '{path}' is not a file."
+            
+        return p.read_text(encoding='utf-8')
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
+
+@mcp.tool()
+def write_file(path: str, content: str) -> str:
+    """Writes content to a file. Overwrites if exists."""
+    try:
+        p = Path(path)
+        p.write_text(content, encoding='utf-8')
+        return f"Successfully wrote to '{path}'"
+    except Exception as e:
+        return f"Error writing file: {str(e)}"
+
+@mcp.tool()
+def create_directory(path: str) -> str:
+    """Creates a new directory."""
+    try:
+        p = Path(path)
+        p.mkdir(parents=True, exist_ok=True)
+        return f"Successfully created directory '{path}'"
+    except Exception as e:
+        return f"Error creating directory: {str(e)}"
+
 if __name__ == "__main__":
-    print("Starting MCP server...")
-    mcp.run(transport="streamable-http")
+    mcp.run() # stdio by default
 
 
+# TREE AND FIND
