@@ -1,6 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 import os
 from pathlib import Path
+import subprocess as sp
 
 # Initialize FastMCP server
 mcp = FastMCP("local-repo-editor")
@@ -57,9 +58,52 @@ def create_directory(path: str) -> str:
         return f"Successfully created directory '{path}'"
     except Exception as e:
         return f"Error creating directory: {str(e)}"
+    
+# Git related tools
+
+@mcp.tool()
+def git_status(path: str) -> str:
+    try: 
+        return sp.run(
+            f"git -C {path} status",
+            shell=True,
+            capture_output=True,
+            text=True
+        ).stdout.strip()
+    except Exception as e:
+        return str(e)
+    
+@mcp.tool()
+def git_get_HEAD(path: str) -> str:
+    try:
+        return sp.run(
+            f"git -C {path} rev-parse HEAD",
+            capture_output=True,
+            text=True
+        ).stdout.strip()
+    except Exception as e:
+        return str(e)
+    
+@mcp.tool()
+def git_check_if_repo(path: str) -> bool:
+    '''Checks if the provided path leads to a git repository.'''
+    try:
+        # TODO: Replace with test -d statement and return a string to be more MCP friendly.
+        sp.run(
+            f"git -C {path} rev-parse",
+            check=True,
+            capture_output=True
+        )
+        return True
+    except Exception:
+        return False
+    
+
+    
 
 if __name__ == "__main__":
     mcp.run() # stdio by default
 
 
-# TREE AND FIND
+'''Add FIND command functionality for posix compliance and tree to allow
+    the MCP client to generate prettier looking directory graphs.'''
